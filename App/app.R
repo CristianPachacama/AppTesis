@@ -10,6 +10,24 @@ pkgTest("ggplot2")
 pkgTest("dygraphs")
 pkgTest("TSstudio")
 pkgTest("leaflet")
+pkgTest("htmltools")
+pkgTest("rgdal")
+pkgTest("readr")
+pkgTest("DT")
+pkgTest("dplyr")
+pkgTest("reshape2")
+pkgTest("lmtest")
+pkgTest("TSdist")
+pkgTest("xts")
+pkgTest("stlplus")
+pkgTest("TSA")
+pkgTest("forecast")
+pkgTest("smacof")
+pkgTest("cluster")
+pkgTest("ks")
+pkgTest("fpca")
+pkgTest("fdapace")
+
 #Correccion de Version en paquete 'xts' ===============
 # install.packages('devtools', dependencies = T)
 # require(devtools)
@@ -27,7 +45,7 @@ library(dygraphs)
 library(TSstudio)
 #Mapas
 library(leaflet)
-library(htmltools)
+# library(htmltools)
 library(rgdal)
 #Tablas
 library(readr)
@@ -40,6 +58,8 @@ library(lmtest)
 # library(lubridate)
 library(TSdist)
 library(xts)
+library(stlplus)  #!!!!!!!!!!!!!!!!!!!!
+
 library(TSA)
 library(forecast)
 #Mutivariante
@@ -56,6 +76,10 @@ load('Data/Actual/InterfazMes.RData')
 load('Data/Actual/DataVazoes.RData')
 load("Data/Actual/VazoesCode.RData")
 clima_dat=clima_dat2
+particion = 0.20 #Particion Entrenamiento
+set.seed(2) 
+# Matiz de Distancias 
+source(file ="Code/SARIMAX/Extras/DistanciasAVazoes.R",local = TRUE) #BDDmin
 # ========================================================================
 # !!!!!!!!!!!!!!!!!!!!!!    USER INTERFACE   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # ========================================================================
@@ -271,6 +295,11 @@ ui <- navbarPage(id='tesis' ,title = "Tesis",
                           withMathJax(),  
                           p("Se plantea un modelo \\(SARIMAX(p,d,q,P,D,Q) \\), que tiene la siguiente forma:"),
                           p(align="center", "\\( \\varphi_p(L)\\Psi_P(L^s) \\bigtriangledown _s^D V_t = \\sum_{k=1}^{w}\\beta_k C_{kt} + \\phi_q(L) \\Phi_Q(L^s)e_t \\)"),
+                          
+                          #Especificaciones
+                          p("Donde \\(V_t\\) es el caudal estimado del clúster en el tiempo \\(t\\), \\(C_{kt}\\) son las variables de Clima de la estación \\(k\\) en el tiempo \\(t\\)."),
+                          
+                          
                           p("Para ello primero seleccione el Clúster que desea analizar. Recuerde haber realizado 
                             primero el Análisis respectivo en la primera pestaña (",
                             actionLink(inputId = "pestania_cluster3",label = "Clusters"),
@@ -289,34 +318,107 @@ ui <- navbarPage(id='tesis' ,title = "Tesis",
                                       selected = "1",
                                       choices = 1:4
                           ),
-                          
+                          #Grafico Estacion Seleccionada
+                          dygraphOutput(outputId = "graf_vaz_estacion",width = "98%"),
                           p("Luego, elije las variables regresoras del modelo, en este caso contamos con variables Climáticas."),
+                          br(),
                           # Variables Climáticas
-                          h4("Variables Climáticas Asociadas"),
+                          h4("Variables Regresoras"),
                           p("En la siguiente tabla se muestran las series climáticas asociadas a las estaciones
                             de medición más cercanas a las estaciones donde se midieron los Flujos que componen
                             el Clúster. Además, podemos encontrar la gráfica de dichas series, así como un mapa
                             donde podemos observar las estaciones de medición de Flujos y sus correspondientes 
                             estaciones de medición de Clima."),
-                          
+                          p("Puede incluir en el modelo además, variables como la serie de Fujos representante
+                            del Clúster, así como las series que representan a las variables Climáticas: 
+                            Precipitación, Temperatura Máxima, Temperatura Mínima, y Humedad (halladas a partir
+                            de ACP Funcional)."),
+                          # Eleccion Variables Extras 
+                          checkboxInput("flujoBox", label = "Flujo del Clúster", value = FALSE),
+                          checkboxInput("precipBox", label = "Precipitación del Clúster", value = FALSE),
+                          checkboxInput("tempMaxBox", label = "Temperatura Máxima del Clúster", value = FALSE),
+                          checkboxInput("tempMinBox", label = "Temperatura Mínima del Clúster", value = FALSE),
+                          checkboxInput("humedBox", label = "Humedad del Clúster", value = FALSE),
+
+                          #Pestañas 
                           tabsetPanel(
                             
-                            tabPanel("Listado", br(),
+                            tabPanel("Variables Regresoras", br(),
                                      #Tabla Variables Clima del Clúster
-                                     dataTableOutput(outputId = "tab_clim_clus2")
+                                     dataTableOutput(outputId = "tab_clim_clus3")
                             ),
                             tabPanel("Gráfico", br(),
                                      #Grafico de las Series Climaticas
-                                     dygraphOutput(outputId = "graf_clim_clus2",width = "80%",height = "400px")
+                                     dygraphOutput(outputId = "graf_clim_clus3",width = "98%",height = "400px")
                                      
                             ),
                             tabPanel("Mapa",
                                      #Mapa de estaciones de Clima
-                                     leafletOutput(outputId = "map_clim_clus2")
+                                     leafletOutput(outputId = "map_clim_clus3")
                             )
                             
                           ),
-                          br(),br()
+                          br(),
+                          p("Nota: Si no selecciona ninguna de las variables de la tabla anterior, por 
+                            defecto se consideran todas las variable climáticas."),
+                          br(),
+                          
+                          #Parámetros del Modelo
+                          h4("Selección del Parámetros"),
+                          p("A continuación puede elegir los parámetros \\( (p,d,q,P,D,Q)\\) del modelo (asociados a los retardos y diferencias)."),
+                          
+                          fluidRow(
+                            
+                            column(4,
+                                   selectInput(inputId = "par_p",label = "p",choices = 0:12,selected = 6),
+                                   selectInput(inputId = "par_P",label = "P",choices = 0:12,selected = 1)
+                                   ),
+                            column(4,
+                                   selectInput(inputId = "par_d",label = "d",choices = 0:3,selected = 0),
+                                   selectInput(inputId = "par_D",label = "D",choices = 0:3,selected = 1)
+                            ),
+                            column(4,
+                                   selectInput(inputId = "par_q",label = "q",choices = 0:8,selected = 4),
+                                   selectInput(inputId = "par_Q",label = "Q",choices = 0:8,selected = 0)
+                            )
+                            
+                          ),
+                          br(),
+                          p(align="center",
+                            actionButton(inputId = "boton_modelo",
+                                         label= "Ejecutar Análisis",
+                                         icon = icon("cog", lib = "glyphicon") 
+                                         )
+                            ),
+                          
+                          hr(),
+                          h3("Resultados",align="center"),
+                          h4(textOutput(outputId = "estacion_modelada")),
+                          
+                          tabsetPanel(
+                            #Coeficientes Estimados
+                            tabPanel("Coeficientes",
+                                     p("En esta sección presentamos un resumen general del modelo estimado
+                                       a partir de los parámetros antes fijados."),
+                                     verbatimTextOutput("coeficientes")
+                            ),
+                            #Residuos
+                            tabPanel("Residuos"
+                                     
+                                     
+                                     
+                            ),
+                            #Prediccion
+                            tabPanel("Predicción"
+                                     
+                                     
+                            )
+                            
+                            
+                            
+                          ),
+                          
+                          br()
                           
                           
                  )
@@ -342,6 +444,10 @@ server <- function(input, output,session) {
   
   
   # Analisis Componentes Principales --------------
+  observe({
+    updateSelectInput(session,inputId = "n_clus_acpf2",
+                      choices = 1:as.numeric(input$vaz_clus_k) )
+  })
   source("Code/ACP Funcional/1_TablaVaz.R",local = TRUE)
   source("Code/ACP Funcional/1_GraficoVaz.R",local = TRUE)
   source("Code/ACP Funcional/2_ACP Funcional.R",local = TRUE)
@@ -353,16 +459,24 @@ server <- function(input, output,session) {
   
   
   # Modelamiento SARIMAX  -------------------------
-  
+  observe({
+    updateSelectInput(session,inputId = "n_clus_acpf3",
+                      choices = 1:as.numeric(input$vaz_clus_k) )
+  })
+  source("Code/SARIMAX/0_Datos Modelo.R",local = TRUE)
+  source("Code/SARIMAX/1_Lista Vazoes.R",local = TRUE)
+  source("Code/SARIMAX/1_Grafico Vazoe.R",local = TRUE)
+  source("Code/SARIMAX/2_Tabla Regresoras.R",local = TRUE)
+  source("Code/SARIMAX/2_Grafico Regresoras.R",local = TRUE)
+  source("Code/SARIMAX/3_Datos Reactivos.R",local = TRUE)
+  source("Code/SARIMAX/Extras/TrainTest.R",local = TRUE)
+  source("Code/SARIMAX/3_Modelo.R",local = TRUE)
+  source("Code/SARIMAX/3_Resultados.R",local = TRUE)
   observeEvent(input$pestania_cluster3, {
     updateNavbarPage(session, "tesis", "Clusters")
   })
-  
-  
-  
-  
-  
-  
+  #Subtitutlo Resultados
+  output$estacion_modelada = renderText(paste("Modelamiento Estación:",input$nomb_est_vaz3))
   
 }
 
