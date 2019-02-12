@@ -131,8 +131,15 @@ LimpiezaSTL2 = function(BDDtsc,fecha0){
 
 
 
-#Ejecutar Limpieza-STL --------------------
-LimBDDtsc= LimpiezaSTL(BDDtsc,fecha0)
+#Ejecutar Limpieza-STL ------------------------------------------------------------
+
+if(input$ruidoClimaBox){
+  LimBDDtsc= LimpiezaSTL2(BDDtsc,fecha0)
+}else{
+  LimBDDtsc= LimpiezaSTL(BDDtsc,fecha0)
+}
+
+# LimBDDtsc= LimpiezaSTL(BDDtsc,fecha0)
 # LimBDDtsc= LimpiezaSTL2(BDDtsc,fecha0)  #Usamos RUIDO del CLIMA (Parte Estacionaria)  !!!!!!!!!!!!!!!!!!!!!!!!!
 
 # Graficas

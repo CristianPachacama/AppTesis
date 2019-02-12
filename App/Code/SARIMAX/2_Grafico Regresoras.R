@@ -3,17 +3,21 @@
 output$graf_clim_clus3 = renderDygraph({
   
   #Datos
-  BDDRegresion = DatosModelo()$BDDRegresion
+  # BDD = DatosModelo()$BDD
+  BDD = VarIndepX()
   fecha = DatosModelo()$fecha0r
+  
   #Series Clima a Graficar
-  ind =NULL
-  #Filtro de series seleccionadas
-  if(is.null(ind)){
-    aux = BDDRegresion[,-1]
-  }else{
-    aux = BDDRegresion[,ind]
-  }
+  # ind =NULL
+  # #Filtro de series seleccionadas
+  # if(is.null(ind)){
+  #   aux = BDD[,-1]
+  # }else{
+  #   aux = BDD[,ind]
+  # }
+  
   #Guardamos en TS object
+  aux = BDD[,-1]
   aux = ts(aux,start = fecha , frequency = 12)
   
   dygraph(data = aux, main = "Variables Regresoras")%>%

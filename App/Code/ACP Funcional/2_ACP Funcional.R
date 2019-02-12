@@ -6,7 +6,8 @@
 #Cargamos Datos de Vazoes ---------------------------------
 load("Data/DataVazoes.RData")
 # BDDv$Fecha = as.character(seq.Date(from=as.Date("1931-01-01"),to=as.Date("2015-12-01"),by="month"))
-# Funcion Reactiva ACP  ===================================
+
+# ACP Funcional Vazoe  ===================================
 VazPcaFun = reactive({
   
   
@@ -40,14 +41,14 @@ VazPcaFun = reactive({
                          useBinnedData="OFF")
                     )
   
-  MedVazPca = data.frame(Fecha=BDDv_corta$Fecha , VazoePCA = FitVazPca$mu)
+  MedVazPca = data.frame(Fecha=BDDv_corta$Fecha,
+                         VazoePCA = FitVazPca$mu)
   
-  return(list("FitVazPca"=FitVazPca,"BDDv_corta"=BDDv_corta,"MedVazPca"=MedVazPca))
+  return(list("FitVazPca"= FitVazPca,
+              "BDDv_corta"= BDDv_corta,
+              "MedVazPca"= MedVazPca))
   
 })
-
-
-
 
 
 

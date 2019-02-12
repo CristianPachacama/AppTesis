@@ -5,6 +5,6 @@ output$graf_vaz_estacion = renderDygraph({
   
   dygraph(aux)%>% 
     dyRangeSelector(dateWindow = c('2000-01-01','2013-12-31'))%>%
-    dyHighlight(highlightSeriesBackgroundAlpha = 0.3)%>%
-    dyLegend(show = "never")
+    dyHighlight(highlightSeriesBackgroundAlpha = 0.3)#%>%
+    # dyLegend(show = "never")
 })

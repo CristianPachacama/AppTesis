@@ -1,25 +1,19 @@
 # MODELO SARIMAX  ==============================================
 
+
+# Modelo  ----------------
 ModelFit = eventReactive(input$boton_modelo,{
   
-  #Datos Particionados -------------
-  # X = TrainTestClim()$BDDTrain
-  # VazTrain = TrainTestVaz()$BDDTrain
-  # VazTrain = VazTrain[,-1]
+  #Datos Completos
+  Xtrain = VarIndepX()
   
-  #Datos Completos  ----------------
-  X = datosClimModel()
+  #Variable Dependiente
   VazTrain = datosVazModel()
   
+  #Fechas
   fecha0r = DatosModelo()$fecha0r
-  X = ts(X[,-1],start=fecha0r,frequency = 12)
+  # Xtrain2 = ts(Xtrain[,-1],start=fecha0r,frequency = 12)
   VazTrain = ts(VazTrain[,-1],start=fecha0r,frequency = 12)
-  
-  # print("**********  Train CLIMA ************")
-  # print(X)
-  # 
-  # print("**********  Train VAZOE ************")
-  # print(head(VazTrain))
   
   #Parametros  ------------------
   p_param = as.numeric(input$par_p)  #6
@@ -30,13 +24,51 @@ ModelFit = eventReactive(input$boton_modelo,{
   Q_param = as.numeric(input$par_Q)  #0
   
   #Modelo usando funcion Arima ---------------------------------
-  modeloClust = Arima(y= VazTrain,
-                      order = c(p=p_param,d=d_param,q=q_param),
-                      seasonal = list(order = c(P=P_param,D=D_param,Q=Q_param), period = 12),
-                      xreg = X
-  )
+  if(dim(Xtrain)[2] == 1){
+    
+    modeloClust = Arima(y= VazTrain,
+                        order = c(p=p_param,d=d_param,q=q_param),
+                        seasonal = list(order = c(P=P_param,D=D_param,Q=Q_param), 
+                                        period = 12)
+    )
+    
+  }else{
+    
+    Xtrain = ts(Xtrain[,-1],start=fecha0r,frequency = 12)
+    modeloClust = Arima(y= VazTrain,
+                        order = c(p=p_param,d=d_param,q=q_param),
+                        seasonal = list(order = c(P=P_param,D=D_param,Q=Q_param), 
+                                        period = 12),
+                        xreg = Xtrain
+    )
+    
+  }
   
   
   return(modeloClust)
 })
+
+
+#Predicciones  ------------------
+
+
+
+
+
+
+# summary(modeloClust)
+# coeftest(modeloClust)
+# checkresiduals(modeloClust)
+# 
+# {
+#   prediccion = forecast(modeloClust,xreg = BDDtest[,c(VarXsMacro)])
+#   autoplot(prediccion)
+# }
+# 
+# 
+# test_forecast(
+#   actual = log(VazoePCAts),
+#   forecast.obj = prediccion,
+#   test = BDDtest[, "VazoePCA"]
+# )
 

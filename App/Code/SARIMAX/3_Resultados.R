@@ -8,12 +8,17 @@ output$coeficientes = renderPrint({
   print(" ")
   print("*******************   MODELO SARIMAX   ********************")
   print(summary(modelo))
+  print("*******************   Resumen del Modelo   ********************")
   print(coeftest(modelo))
 })
 
 
 #Residuos  ----------------------
-
+output$resid_graf = renderPlot({
+  modelo = ModelFit()
+  checkresiduals(modelo)
+  
+})
 
 
 

@@ -1,7 +1,7 @@
 # Matiz de Distancias  ------------------
 # source(file = "Code/SARIMAX/Extras/DistanciaAVazoes.R") #Aqui esta BDDmin
 
-# Datos para Modelo ---------------------
+# Datos Completos de CLIMA para Modelo ---------------------
 DatosModelo = reactive({
   
   # Insumos Reactivos 
@@ -10,6 +10,7 @@ DatosModelo = reactive({
     select(Estacion,Cluster)
   FitVazPca = VazPcaFun()$FitVazPca
   BDDv_corta = VazPcaFun()$BDDv_corta
+  
   MedVazPca = VazPcaFun()$MedVazPca
   
   #Esaciones
@@ -23,12 +24,8 @@ DatosModelo = reactive({
   
   estacionesAux = unique(as.character(VariablesClima$Clima_min))
   
-  # Incluir o No el Flujo del Cluster
-  if(input$flujoBox == TRUE){
-    BDDRegresion = MedVazPca
-  }else{
-    BDDRegresion = data.frame(Fecha= MedVazPca$Fecha)
-  }
+  BDDRegresion = data.frame(Fecha= MedVazPca$Fecha)
+  remove(MedVazPca)
   
   # Se añaden las Variables Climáticas --------------------
   for(k in  1:length(estacionesAux)){
@@ -45,13 +42,14 @@ DatosModelo = reactive({
       #Limpiamos Data Clima
       source("Code/SARIMAX/Extras/LimpiezaSTL-Loess.R",local = TRUE)
       
-      #Juntamos en una sola Base (PCAVazoe, Clim1Esta1,Clima2Esta1,....Clima6Esta1)
+      #Juntamos en una sola Base (Clim1Esta1,Clima2Esta1,....Clima6Esta1)
       LimBDDc = data.frame(LimBDDtsc)
       estacion_k = substr(estacionK,1,nchar(estacionK)-4)
       names(LimBDDc) = paste0(estacion_k,"_",names(LimBDDc))
       LimBDDc$Fecha = as.Date(LimBDDtsc)
       
       BDDRegresion = BDDRegresion %>% inner_join(LimBDDc,by="Fecha")
+      
       
     }
     
@@ -63,7 +61,8 @@ DatosModelo = reactive({
   fecha0r = as.numeric(fecha0r)
   
   # VazoePCAts = ts(BDDRegresion$VazoePCA,start = fecha0r , frequency = 12)
-  VazoePCAts=1
-  return(list("BDDRegresion"=BDDRegresion,"VazoePCAts"=VazoePCAts,"fecha0r"=fecha0r))
+  # VazoePCAts=1
+  
+  return(list("BDDRegresion"=BDDRegresion,"fecha0r"=fecha0r))
 })
 
